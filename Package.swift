@@ -7,14 +7,16 @@ let package = Package(
     name: "GoreSwift",
     dependencies: [
         .package(url: "https://github.com/kylef/Commander.git", from: "0.8.0"),
+        .package(url: "https://github.com/drmohundro/SWXMLHash.git", from: "4.0.0")
     ],
     targets: [
         .target(
             name: "GoreSwift",
-            dependencies: ["GoreSwiftCore", "Commander"]
+            dependencies: ["GoreSwiftCore"]
         ),
         .target(
-            name: "GoreSwiftCore"
+            name: "GoreSwiftCore",
+            dependencies: ["Commander", "SWXMLHash"]
         ),
     ]
 )
