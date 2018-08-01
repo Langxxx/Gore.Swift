@@ -24,4 +24,23 @@ extension Entity: XMLIndexerDeserializable {
     }
 }
 
+extension Entity: AttributeConverible, AttributeKeyConverible {
+    var attributeKeySwiftCode: String {
+        return attributes.map  { $0.attributeKeySwiftCode }
+            .joined(separator: "\n")
+    }
 
+    var attributeSwiftCode: String {
+        return attributes.map { $0.attributeSwiftCode }
+            .joined(separator: "\n")
+    }
+}
+
+extension Entity {
+    var swiftCode: String {
+        var section = [String]()
+        section.append("extension \(name) {\n" + attributeSwiftCode.indent() + "\n}")
+        section.append("extension \(name) {\n" + attributeKeySwiftCode.indent() + "\n}")
+        return section.joined(separator: "\n\n")
+    }
+}

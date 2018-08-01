@@ -15,6 +15,6 @@ command (
         throw ArgumentError.unusedArgument("input")
     }
     let outputURL = URL(fileURLWithPath: output, isDirectory: true)
-    try CoreSwiftCore.run(input: xmlPath, output: outputURL)
+    try CoreSwiftCore.run(input: xmlPath, outputDir: outputURL)
 }.run()
 
