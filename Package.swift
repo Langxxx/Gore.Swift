@@ -6,13 +6,12 @@ import PackageDescription
 let package = Package(
     name: "GoreSwift",
     dependencies: [
-        // Dependencies declare other packages that this package depends on.
-        // .package(url: /* package url */, from: "1.0.0"),
+        .package(url: "https://github.com/kylef/Commander.git", from: "0.8.0"),
     ],
     targets: [
         .target(
             name: "GoreSwift",
-            dependencies: ["GoreSwiftCore"]
+            dependencies: ["GoreSwiftCore", "Commander"]
         ),
         .target(
             name: "GoreSwiftCore"
