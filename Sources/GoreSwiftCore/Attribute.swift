@@ -57,7 +57,4 @@ extension Attribute: AttributeConverible, AttributeKeyConverible {
         return "@NSManaged \(accessModifier) var \(name): \(type)\(optionalStr)"
     }
 
-    var attributeKeySwiftCode: String {
-        return "@nonobjc \(accessModifier) static let \(name) = \"\(name)\""
-    }
 }

@@ -13,5 +13,13 @@ protocol AttributeConverible {
 }
 
 protocol AttributeKeyConverible {
+    var accessModifier: String { get }
+    var name: String { get }
     var attributeKeySwiftCode: String { get }
+}
+
+extension AttributeKeyConverible {
+    var attributeKeySwiftCode: String {
+        return "@nonobjc \(accessModifier) static let \(name) = \"\(name)\""
+    }
 }

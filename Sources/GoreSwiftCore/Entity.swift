@@ -12,6 +12,8 @@ struct Entity {
     let name: String
     let attributes: [Attribute]
     let parrentName: String?
+
+    let relationships: [Relationship]?
 }
 
 extension Entity: XMLIndexerDeserializable {
@@ -19,28 +21,35 @@ extension Entity: XMLIndexerDeserializable {
         return try Entity(
             name: node.value(ofAttribute: "name"),
             attributes: node["attribute"].value(),
-            parrentName: node.value(ofAttribute: "parentEntity")
+            parrentName: node.value(ofAttribute: "parentEntity"),
+            relationships: node["relationship"].value()
         )
     }
 }
 
-extension Entity: AttributeConverible, AttributeKeyConverible {
-    var attributeKeySwiftCode: String {
-        return attributes.map  { $0.attributeKeySwiftCode }
-            .joined(separator: "\n")
+extension Entity {
+    var attributeKeySecion: String {
+        let attributes = self.attributes.map { $0.attributeKeySwiftCode }
+            .reduce(into: "// attributes") { $0 = $0 + "\n" + $1 }
+        let relationships =  self.relationships?.map { $0.attributeKeySwiftCode }
+            .reduce(into: "// relationship") { $0 = $0 + "\n" + $1 } ?? ""
+        return [attributes, relationships].joined(separator: "\n\n")
     }
 
-    var attributeSwiftCode: String {
-        return attributes.map { $0.attributeSwiftCode }
-            .joined(separator: "\n")
+    var attributeSection: String {
+        let attributes = self.attributes.map { $0.attributeSwiftCode }
+            .reduce(into: "// attributes") { $0 = $0 + "\n" + $1 }
+        let relationships =  self.relationships?.map { $0.attributeSwiftCode }
+            .reduce(into: "// relationship") { $0 = $0 + "\n" + $1 } ?? ""
+        return [attributes, relationships].joined(separator: "\n\n")
     }
 }
 
 extension Entity {
     var swiftCode: String {
         var section = [String]()
-        section.append("extension \(name) {\n" + attributeSwiftCode.indent() + "\n}")
-        section.append("extension \(name) {\n" + attributeKeySwiftCode.indent() + "\n}")
+        section.append("extension \(name) {\n" + attributeSection.indent() + "\n}")
+        section.append("extension \(name) {\n" + attributeKeySecion.indent() + "\n}")
         return section.joined(separator: "\n\n")
     }
 }
