@@ -28,28 +28,17 @@ extension Entity: XMLIndexerDeserializable {
 }
 
 extension Entity {
-    var attributeKeySecion: String {
-        let attributes = self.attributes.map { $0.attributeKeySwiftCode }
-            .reduce(into: "// attributes") { $0 = $0 + "\n" + $1 }
-        let relationships =  self.relationships?.map { $0.attributeKeySwiftCode }
-            .reduce(into: "// relationship") { $0 = $0 + "\n" + $1 } ?? ""
-        return [attributes, relationships].joined(separator: "\n\n")
+    var attributesGenerator: AttributeGenerator {
+        return AttributeGenerator(entity: self)
     }
-
-    var attributeSection: String {
-        let attributes = self.attributes.map { $0.attributeSwiftCode }
-            .reduce(into: "// attributes") { $0 = $0 + "\n" + $1 }
-        let relationships =  self.relationships?.map { $0.attributeSwiftCode }
-            .reduce(into: "// relationship") { $0 = $0 + "\n" + $1 } ?? ""
-        return [attributes, relationships].joined(separator: "\n\n")
+    var attributesKeyGenerator: AttributeKeyGenerator {
+        return AttributeKeyGenerator(entity: self)
     }
 }
 
 extension Entity {
     var swiftCode: String {
-        var section = [String]()
-        section.append("extension \(name) {\n" + attributeSection.indent() + "\n}")
-        section.append("extension \(name) {\n" + attributeKeySecion.indent() + "\n}")
-        return section.joined(separator: "\n\n")
+        let all: [Generator] = [attributesGenerator, attributesKeyGenerator]
+        return  all.map { $0.generate() }.joined(separator: "\n\n")
     }
 }

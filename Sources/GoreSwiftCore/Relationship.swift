@@ -46,8 +46,8 @@ extension Relationship: AttributeConverible, AttributeKeyConverible {
 }
 
 extension Relationship {
-    var convenienceFunction: String? {
-        guard toMany else { return nil }
-
-    }
+//    var convenienceFunction: String? {
+//        guard toMany else { return nil }
+//
+//    }
 }
