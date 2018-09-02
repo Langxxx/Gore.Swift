@@ -8,27 +8,14 @@
 import Foundation
 
 
-protocol FunctionConverible {
-    var signature: [String] { get }
-    var body: [String] { get }
-    var functionSwiftCode: String { get }
-}
-
-extension FunctionConverible {
-    var functionSwiftCode: String {
-        return zip(signature, body)
-            .map { signature, body in return "\(signature) {\n\(body.indent())\n}" }
-            .joined(separator: "\n")
-    }
-}
-
 struct ConvenienceFucntionGenerator: Generator {
     let entity: Entity
 
     var body: String {
-        let relationship = entity.relationships?.map { $0.functionSwiftCode }
-            .filter { !$0.isEmpty }
-            .joined(separator: "\n\n")
+        let relationship = entity.relationships?
+            .compactMap { $0.convenienceFucntion }
+            .flatMap { $0.map { $0.swiftCode } }
+            .joined(separator: "\n")
         return relationship ?? ""
     }
     func generate() -> String {

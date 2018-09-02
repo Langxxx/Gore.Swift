@@ -45,13 +45,12 @@ extension Relationship: AttributeConverible, AttributeKeyConverible {
     }
 }
 
-extension Relationship: FunctionConverible {
-    var signature: [String] {
-        return toMany ? [_addFcuntionSignature, _removeFcuntionSignature] : []
-    }
-
-    var body: [String] {
-        return toMany ? [_addFunctionBody, _removeFunctionBody] : []
+extension Relationship {
+    var convenienceFucntion: [Function]? {
+        if !toMany { return nil }
+        let addRelationship = Function(comments: [], signature: _addFcuntionSignature, body: _addFunctionBody)
+        let removeRelationship = Function(comments: [], signature: _removeFcuntionSignature, body: _removeFunctionBody)
+        return [addRelationship, removeRelationship]
     }
 
     private var _addFcuntionSignature: String {
