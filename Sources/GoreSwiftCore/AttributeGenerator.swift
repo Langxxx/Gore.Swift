@@ -42,9 +42,9 @@ struct AttributeKeyGenerator: Generator {
     let entity: Entity
 
     var body: String {
-        let attributes = entity.attributes.map { $0.attributeSwiftCode }
+        let attributes = entity.attributes.map { $0.attributeKeySwiftCode }
             .reduce(into: "// attributes") { $0 = $0 + "\n" + $1 }
-        let relationships =  entity.relationships?.map { $0.attributeSwiftCode }
+        let relationships =  entity.relationships?.map { $0.attributeKeySwiftCode }
             .reduce(into: "// relationship") { $0 = $0 + "\n" + $1 } ?? ""
         return [attributes, relationships].joined(separator: "\n\n")
     }
