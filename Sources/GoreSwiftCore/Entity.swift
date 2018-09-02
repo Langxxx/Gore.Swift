@@ -34,11 +34,14 @@ extension Entity {
     var attributesKeyGenerator: AttributeKeyGenerator {
         return AttributeKeyGenerator(entity: self)
     }
+    var convenienceFunctionGenerator: ConvenienceFucntionGenerator {
+        return ConvenienceFucntionGenerator(entity: self)
+    }
 }
 
 extension Entity {
     var swiftCode: String {
-        let all: [Generator] = [attributesGenerator, attributesKeyGenerator]
+        let all: [Generator] = [attributesGenerator, attributesKeyGenerator, convenienceFunctionGenerator]
         return  all.map { $0.generate() }.joined(separator: "\n\n")
     }
 }

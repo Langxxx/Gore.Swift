@@ -45,9 +45,38 @@ extension Relationship: AttributeConverible, AttributeKeyConverible {
     }
 }
 
-extension Relationship {
-//    var convenienceFunction: String? {
-//        guard toMany else { return nil }
-//
-//    }
+extension Relationship: FunctionConverible {
+    var signature: [String] {
+        return toMany ? [_addFcuntionSignature, _removeFcuntionSignature] : []
+    }
+
+    var body: [String] {
+        return toMany ? [_addFunctionBody, _removeFunctionBody] : []
+    }
+
+    private var _addFcuntionSignature: String {
+        return "func add\(name.capitalized)Object(_ obj: \(destinationEntityName))"
+    }
+    private var _addFunctionBody: String {
+        return "let mutable = \(name).mutableCopy() as! \(setDescription)"
+            .nextLine(with: "mutable.add(obj)")
+            .nextLine(with: "\(name) = mutable.copy() as! \(setDescription)")
+    }
+
+    private var _removeFcuntionSignature: String {
+        return "func remove\(name.capitalized)Object(_ obj: \(destinationEntityName))"
+    }
+    private var _removeFunctionBody: String {
+        return "let mutable = \(name).mutableCopy() as! \(setDescription)"
+            .nextLine(with: "mutable.remove(obj)")
+            .nextLine(with: "\(name) = mutable.copy() as! \(setDescription)")
+    }
+}
+
+
+
+private extension Relationship {
+    var setDescription: String {
+        return ordered ? "NSMutableOrderedSet" : "NSSet"
+    }
 }

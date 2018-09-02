@@ -12,4 +12,8 @@ extension String {
         let components = self.components(separatedBy: "\n")
         return indentation + components.joined(separator: "\n\(indentation)")
     }
+
+    func nextLine(with code: String) -> String {
+        return self + "\n" + code
+    }
 }
