@@ -14,6 +14,7 @@ struct Entity {
     let parrentName: String?
 
     let relationships: [Relationship]?
+    let uniquenessConstraint: String?
 }
 
 extension Entity: XMLIndexerDeserializable {
@@ -22,7 +23,8 @@ extension Entity: XMLIndexerDeserializable {
             name: node.value(ofAttribute: "name"),
             attributes: node["attribute"].value(),
             parrentName: node.value(ofAttribute: "parentEntity"),
-            relationships: node["relationship"].value()
+            relationships: node["relationship"].value(),
+            uniquenessConstraint: node["uniquenessConstraints"]["uniquenessConstraint"]["constraint"].value(ofAttribute: "value")
         )
     }
 }
