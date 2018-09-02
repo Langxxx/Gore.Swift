@@ -10,12 +10,13 @@ import SWXMLHash
 
 struct Model {
     let entities: [Entity]
+    static var entities = Set<Entity>()
 }
 
 extension Model: XMLIndexerDeserializable {
     static func deserialize(_ node: XMLIndexer) throws -> Model {
-        return try Model(
-            entities: node["entity"].value()
-        )
+        let model = try Model(entities: node["entity"].value())
+        Model.entities = Set<Entity>(model.entities)
+        return model
     }
 }

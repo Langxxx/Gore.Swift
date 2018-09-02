@@ -45,3 +45,13 @@ extension Entity {
         return  all.map { $0.generate() }.joined(separator: "\n\n")
     }
 }
+
+extension Entity: Hashable {
+    static func == (lhs: Entity, rhs: Entity) -> Bool {
+        return lhs.name == rhs.name
+    }
+
+    var hashValue: Int {
+        return name.hashValue
+    }
+}
