@@ -7,16 +7,16 @@
 
 import Foundation
 
-struct Function {
+struct Function: CodeBlock {
     let comments: [String]
     let signature: String
-    let body: String
+    let statements: [String]
 }
 
 
 extension Function {
     var swiftCode: String {
         let commentsString = comments.map { "/// \($0)\n" }.joined(separator: "")
-        return "\(commentsString)\(signature) {\n\(body.indent())\n}"
+        return "\(commentsString)\(signature) \(codeBlock)"
     }
 }

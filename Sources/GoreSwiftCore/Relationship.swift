@@ -48,27 +48,31 @@ extension Relationship: AttributeConverible, AttributeKeyConverible {
 extension Relationship {
     var convenienceFucntion: [Function]? {
         if !toMany { return nil }
-        let addRelationship = Function(comments: [], signature: _addFcuntionSignature, body: _addFunctionBody)
-        let removeRelationship = Function(comments: [], signature: _removeFcuntionSignature, body: _removeFunctionBody)
+        let addRelationship = Function(comments: [], signature: _addFcuntionSignature, statements: _addFunctionBody)
+        let removeRelationship = Function(comments: [], signature: _removeFcuntionSignature, statements: _removeFunctionBody)
         return [addRelationship, removeRelationship]
     }
 
     private var _addFcuntionSignature: String {
         return "func add\(name.capitalized)Object(_ obj: \(destinationEntityName))"
     }
-    private var _addFunctionBody: String {
-        return "let mutable = \(name).mutableCopy() as! \(setDescription)"
-            .nextLine("mutable.add(obj)")
-            .nextLine("\(name) = mutable.copy() as! \(setDescription)")
+    private var _addFunctionBody: [String] {
+        return [
+            "let mutable = \(name).mutableCopy() as! \(setDescription)",
+            "mutable.add(obj)",
+            "\(name) = mutable.copy() as! \(setDescription)",
+        ]
     }
 
     private var _removeFcuntionSignature: String {
         return "func remove\(name.capitalized)Object(_ obj: \(destinationEntityName))"
     }
-    private var _removeFunctionBody: String {
-        return "let mutable = \(name).mutableCopy() as! \(setDescription)"
-            .nextLine("mutable.remove(obj)")
-            .nextLine("\(name) = mutable.copy() as! \(setDescription)")
+    private var _removeFunctionBody: [String] {
+        return [
+            "let mutable = \(name).mutableCopy() as! \(setDescription)",
+            "mutable.remove(obj)",
+            "\(name) = mutable.copy() as! \(setDescription)"
+        ]
     }
 }
 

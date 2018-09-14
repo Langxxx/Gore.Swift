@@ -62,36 +62,35 @@ extension Entity {
     private func fetchOrCreateFunctions(uniquenessConstraint: String) -> [Function] {
         let one = Function(comments: [],
                            signature: "public class func fetchOrCreate(\(uniquenessConstraint): String, in context: NSManagedObjectContext) -> Self",
-                           body: "var create: Bool = false".nextLine("return _fetchOrCreate(id: id, create: &create, in: context)"))
+                           statements: [
+                            "var create: Bool = false",
+                            "return _fetchOrCreate(id: id, create: &create, in: context)" ])
         let two = Function(comments: [],
                            signature: "public class func fetchOrCreate(\(uniquenessConstraint): String, create: inout Bool, in context: NSManagedObjectContext) -> Self",
-                           body: "return _fetchOrCreate(id: id, create: &create, in: context)")
+                           statements: ["return _fetchOrCreate(id: id, create: &create, in: context)"])
         return [one, two]
     }
 
     private func fetchFunctions(uniquenessConstraint: String) -> [Function] {
         let one = Function(comments: [],
                            signature: "public class func fetch(\(uniquenessConstraint): String, in context: NSManagedObjectContext) -> Self?",
-                           body: "return _fetch(\(uniquenessConstraint): \(uniquenessConstraint), in: context)")
+                           statements: ["return _fetch(\(uniquenessConstraint): \(uniquenessConstraint), in: context)"])
         let two = Function(comments: [],
                            signature: "private class func _fetch<T: \(name)>(\(uniquenessConstraint): String, in context: NSManagedObjectContext) -> T?",
-                           body: "return T.findOrFetch(in: context, predicate: Query.equal(\"\(uniquenessConstraint)\", \(uniquenessConstraint))")
+                           statements: ["return T.findOrFetch(in: context, predicate: Query.equal(\"\(uniquenessConstraint)\", \(uniquenessConstraint))"])
         return [one, two]
     }
 
     private func _fetchOrCreateFunction(uniquenessConstraint: String) -> Function {
-        let body = "guard let result = T.findOrFetch(in: context, predicate: Query.equal(\"\(uniquenessConstraint)\", \(uniquenessConstraint)) else {"
-            .nextLine("let o = T.insertObject(in: context)".indent())
-            .nextLine("o.\(uniquenessConstraint) = \(uniquenessConstraint)".indent())
-            .nextLine("create = true".indent())
-            .nextLine("return o".indent())
-            .nextLine("}")
-            .nextLine("")
-            .nextLine("create = false")
-            .nextLine("return result")
+        let guardBlock = Guard(conditions: ["let result = T.findOrFetch(in: context, predicate: Query.equal(\"\(uniquenessConstraint)\", \(uniquenessConstraint))"],
+                          statements: [
+                            "let o = T.insertObject(in: context)",
+                            "o.\(uniquenessConstraint) = \(uniquenessConstraint)",
+                            "create = true",
+                            "return o"])
         return Function(comments: [],
                         signature: "private class func _fetchOrCreate<T: \(name)>(\(uniquenessConstraint): String, create: inout Bool, in context: NSManagedObjectContext) -> T",
-                        body: body)
+                        statements: [guardBlock.swiftCode] + ["create = false", "return result"])
     }
 }
 
