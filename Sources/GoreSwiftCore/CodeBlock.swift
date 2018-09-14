@@ -8,19 +8,19 @@
 import Foundation
 
 protocol CodeBlock {
-    var statements: [String] { get }
+    var statements: [SwiftCodeConverible] { get }
     var codeBlock: String { get }
 }
 
 extension CodeBlock {
     var codeBlock: String {
-        return "{\n\(statements.joined(separator: "\n").indent())\n}"
+        return "{\n\(statements.map { $0.swiftCode }.joined(separator: "\n").indent())\n}"
     }
 }
 
 
-struct Extension: CodeBlock {
-    let statements: [String]
+struct Extension: CodeBlock, SwiftCodeConverible {
+    let statements: [SwiftCodeConverible]
     let entityName: String
 
     var swiftCode: String {
@@ -28,13 +28,13 @@ struct Extension: CodeBlock {
     }
 }
 
-struct Guard: CodeBlock {
+struct Guard: CodeBlock, SwiftCodeConverible {
 
-    let conditions: [String]
-    let statements: [String]
+    let conditions: [SwiftCodeConverible]
+    let statements: [SwiftCodeConverible]
 
     var swiftCode: String {
-        let base = "guard " + conditions.joined(separator: ",\n") + "else "
+        let base = "guard " + conditions.map { $0.swiftCode }.joined(separator: ",\n") + " else "
         return base + codeBlock
     }
 }

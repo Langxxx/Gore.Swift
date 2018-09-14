@@ -10,11 +10,11 @@ import Foundation
 struct Function: CodeBlock {
     let comments: [String]
     let signature: String
-    let statements: [String]
+    let statements: [SwiftCodeConverible]
 }
 
 
-extension Function {
+extension Function: SwiftCodeConverible {
     var swiftCode: String {
         let commentsString = comments.map { "/// \($0)\n" }.joined(separator: "")
         return "\(commentsString)\(signature) \(codeBlock)"

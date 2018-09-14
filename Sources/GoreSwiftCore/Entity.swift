@@ -90,7 +90,7 @@ extension Entity {
                             "return o"])
         return Function(comments: [],
                         signature: "private class func _fetchOrCreate<T: \(name)>(\(uniquenessConstraint): String, create: inout Bool, in context: NSManagedObjectContext) -> T",
-                        statements: [guardBlock.swiftCode] + ["create = false", "return result"])
+                        statements: [guardBlock] + ["create = false", "return result"])
     }
 }
 
