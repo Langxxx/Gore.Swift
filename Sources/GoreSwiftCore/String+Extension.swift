@@ -13,7 +13,7 @@ extension String {
         return indentation + components.joined(separator: "\n\(indentation)")
     }
 
-    func nextLine(with code: String) -> String {
+    func nextLine(_ code: String) -> String {
         return self + "\n" + code
     }
 }

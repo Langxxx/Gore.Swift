@@ -58,8 +58,8 @@ extension Relationship {
     }
     private var _addFunctionBody: String {
         return "let mutable = \(name).mutableCopy() as! \(setDescription)"
-            .nextLine(with: "mutable.add(obj)")
-            .nextLine(with: "\(name) = mutable.copy() as! \(setDescription)")
+            .nextLine("mutable.add(obj)")
+            .nextLine("\(name) = mutable.copy() as! \(setDescription)")
     }
 
     private var _removeFcuntionSignature: String {
@@ -67,8 +67,8 @@ extension Relationship {
     }
     private var _removeFunctionBody: String {
         return "let mutable = \(name).mutableCopy() as! \(setDescription)"
-            .nextLine(with: "mutable.remove(obj)")
-            .nextLine(with: "\(name) = mutable.copy() as! \(setDescription)")
+            .nextLine("mutable.remove(obj)")
+            .nextLine("\(name) = mutable.copy() as! \(setDescription)")
     }
 }
 

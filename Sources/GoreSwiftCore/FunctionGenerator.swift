@@ -24,3 +24,18 @@ struct ConvenienceFucntionGenerator: Generator {
 
 }
 
+struct FetchOrCreateFunctionGenerator: Generator  {
+    let entity: Entity
+
+    var body: String {
+        guard let f = entity.fetchFunction else {
+            return ""
+        }
+        return f.map { $0.swiftCode }
+            .joined(separator: "\n\n")
+    }
+    func generate() -> String {
+        return "extension \(entity.name) {\n" + body.indent() + "\n}"
+    }
+}
+
