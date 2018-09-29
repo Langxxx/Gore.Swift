@@ -9,5 +9,12 @@ import Foundation
 
 
 protocol Generator {
+    var extensionEntity: Extension { get }
     func generate() -> String
+}
+
+extension Generator {
+    func generate() -> String {
+        return extensionEntity.swiftCode
+    }
 }

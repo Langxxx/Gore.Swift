@@ -12,17 +12,14 @@ protocol AttributeConverible {
 }
 
 struct AttributeGenerator: Generator {
-    let entity: Entity
-
-    var body: String {
+    let extensionEntity: Extension
+    init(entity: Entity) {
         let attributes = entity.attributes.map { $0.attributeSwiftCode }
             .reduce(into: "// attributes") { $0 = $0 + "\n" + $1 }
         let relationships =  entity.relationships?.map { $0.attributeSwiftCode }
             .reduce(into: "// relationship") { $0 = $0 + "\n" + $1 } ?? ""
-        return [attributes, relationships].joined(separator: "\n\n")
-    }
-    func generate() -> String {
-        return "extension \(entity.name) {\n" + body.indent() + "\n}"
+        extensionEntity = Extension(statements: [attributes, relationships],
+                                    entityName: entity.name)
     }
 }
 
@@ -39,17 +36,15 @@ extension AttributeKeyConverible {
 }
 
 struct AttributeKeyGenerator: Generator {
-    let entity: Entity
+    let extensionEntity: Extension
 
-    var body: String {
+    init(entity: Entity) {
         let attributes = entity.attributes.map { $0.attributeKeySwiftCode }
             .reduce(into: "// attributes") { $0 = $0 + "\n" + $1 }
         let relationships =  entity.relationships?.map { $0.attributeKeySwiftCode }
             .reduce(into: "// relationship") { $0 = $0 + "\n" + $1 } ?? ""
-        return [attributes, relationships].joined(separator: "\n\n")
-    }
 
-    func generate() -> String {
-        return "extension \(entity.name) {\n" + body.indent() + "\n}"
+        extensionEntity = Extension(statements: [attributes, relationships],
+                                    entityName: entity.name)
     }
 }
