@@ -14,9 +14,8 @@ struct Function: CodeBlock {
 }
 
 
-extension Function: SwiftCodeConverible {
+extension Function: SwiftCodeConverible, Comment {
     var swiftCode: String {
-        let commentsString = comments.map { "/// \($0)\n" }.joined(separator: "")
         return "\(commentsString)\(signature) \(codeBlock)"
     }
 }

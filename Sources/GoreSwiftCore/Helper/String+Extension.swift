@@ -16,4 +16,9 @@ extension String {
     func nextLine(_ code: String) -> String {
         return self + "\n" + code
     }
+
+    func emptyAsNil() -> String? {
+        return isEmpty ? nil : self
+    }
+    
 }

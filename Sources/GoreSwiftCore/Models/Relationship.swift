@@ -37,19 +37,52 @@ extension Relationship: XMLIndexerDeserializable {
     }
 }
 
-extension Relationship: AttributeConverible, AttributeKeyConverible {
-    var attributeSwiftCode: String {
-        let type = toMany ? (ordered ? "NSOrderedSet" : "NSSet") : destinationEntityName
-        let optionalStr = (optional && !toMany) ? "?" : ""
-        return "@NSManaged \(accessModifier) var \(name): \(type)\(optionalStr)"
+extension Relationship {
+    var property: Property {
+        return Property(
+            comments: [],
+            accessLevel: AccessLevel(rawValue: accessModifier) ?? .internal,
+            static: false,
+            variable: true,
+            name: name,
+            type: optional ? "\(type)?": type,
+            extraModifier: ["@NSManaged"])
+    }
+
+    var keyPathProperty: Property {
+        return Property(
+            comments: [],
+            accessLevel: AccessLevel(rawValue: accessModifier) ?? .internal,
+            static: true,
+            variable: false,
+            name: name,
+            value: "\"\(name)\"")
+    }
+}
+
+fileprivate extension Relationship {
+    var setDescription: String {
+        return ordered ? "NSMutableOrderedSet" : "NSSet"
+    }
+    var type: String {
+        guard toMany else {
+            return destinationEntityName
+        }
+        return setDescription
     }
 }
 
 extension Relationship {
     var convenienceFucntion: [Function]? {
         if !toMany { return nil }
-        let addRelationship = Function(comments: [], signature: _addFcuntionSignature, statements: _addFunctionBody)
-        let removeRelationship = Function(comments: [], signature: _removeFcuntionSignature, statements: _removeFunctionBody)
+        let addRelationship = Function(
+            comments: [],
+            signature: _addFcuntionSignature,
+            statements: _addFunctionBody)
+        let removeRelationship = Function(
+            comments: [],
+            signature: _removeFcuntionSignature,
+            statements: _removeFunctionBody)
         return [addRelationship, removeRelationship]
     }
 
@@ -77,9 +110,3 @@ extension Relationship {
 }
 
 
-
-private extension Relationship {
-    var setDescription: String {
-        return ordered ? "NSMutableOrderedSet" : "NSSet"
-    }
-}

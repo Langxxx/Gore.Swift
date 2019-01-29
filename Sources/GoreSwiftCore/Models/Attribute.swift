@@ -33,8 +33,8 @@ private extension Attribute {
             result = "Bool"
         default: ()
         }
-        if result.hasPrefix("Integer") {
-            result = str.replacingOccurrences(of: "Integer", with: "Int")
+        if result.hasPrefix("Integer ") {
+            result = str.replacingOccurrences(of: "Integer ", with: "Int")
         }
         return result
     }
@@ -51,10 +51,25 @@ extension Attribute: XMLIndexerDeserializable {
     }
 }
 
-extension Attribute: AttributeConverible, AttributeKeyConverible {
-    var attributeSwiftCode: String {
-        let optionalStr = optional ? "?" : ""
-        return "@NSManaged \(accessModifier) var \(name): \(type)\(optionalStr)"
+extension Attribute {
+    var property: Property {
+        return Property(
+            comments: [],
+            accessLevel: AccessLevel(rawValue: accessModifier) ?? .internal,
+            static: false,
+            variable: true,
+            name: name,
+            type: optional ? "\(type)?" : type,
+            extraModifier: ["@NSManaged"])
     }
 
+    var keyPathProperty: Property {
+        return Property(
+            comments: [],
+            accessLevel: AccessLevel(rawValue: accessModifier) ?? .internal,
+            static: true,
+            variable: false,
+            name: name,
+            value: "\"\(name)\"")
+    }
 }
