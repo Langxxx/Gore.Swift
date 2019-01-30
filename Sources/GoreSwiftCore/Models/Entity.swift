@@ -35,7 +35,8 @@ extension Entity {
             attributeExtension,
             attributeKeyExtension,
             relationshipConvenienceFunctionExtension,
-            fetchOrCreateFunctionExtension
+            fetchOrCreateFunctionExtension,
+            updateOrCreateFunctionExtension
         ]
         return  all.compactMap { $0?.swiftCode }.joined(separator: "\n\n")
     }
@@ -76,6 +77,13 @@ extension Entity {
             comments: [],
             name: name,
             statements: fetchFunction)
+    }
+
+    var updateOrCreateFunctionExtension: Extension {
+        return Extension(
+            comments: [],
+            name: name,
+            statements: updateOrCreateFunction)
     }
 }
 
@@ -141,6 +149,54 @@ extension Entity {
     }
 }
 
+extension Entity {
+    var updateOrCreateFunction: [Function] {
+        return [_updateOrCreateFunction()]
+    }
+
+    private func _updateOrCreateFunction() -> Function {
+        var statements: [SwiftCodeConverible] = []
+        let jsonValid = Guard(
+            conditions: ["let json = json"],
+            statements: [Statement.return("nil")])
+        statements.append(jsonValid)
+        statements.append(Statement.empty())
+
+        if let id = uniquenessConstraintWithParrent() {
+            let ifID = If(
+                conditions: [
+                    "let id = json[\"\(id)\"] as? String",
+                    "let obj = \(name).fetch(id: \(id), in: context)"
+                ], statements: [
+                    "obj.update(from: json)",
+                    "configration?(obj, false)",
+                    Statement.return("obj")
+                ])
+            statements.append(Statement(ifID, comments: ["use identifier attribute to fetch first, if already exsit, just update it"]))
+        }
+        let returnCreated = Statement.return("create(from: json, in: context) {\n\("configration?($0, true)".indent())\n}")
+        statements.append(returnCreated)
+        return Function(
+            comments: [],
+            signature: "@discardableResult\npublic \(parrent == nil ? "" : "override ")class func updateOrCreate(from json: JSONResponse?, in context: NSManagedObjectContext, configration: ((\(name), Bool) -> ())? = nil) -> \(name)?",
+            statements: statements)
+    }
+
+    func uniquenessConstraintWithParrent() -> String? {
+        guard let uniquenessConstraint = self.uniquenessConstraint else {
+            return parrent?.uniquenessConstraintWithParrent()
+        }
+        return uniquenessConstraint
+    }
+    //TODO: 
+//    private func _createFunction() -> Function {
+//        let jsonValid = Guard(
+//            conditions: ["let json = json"],
+//            statements: [Statement.return("nil")])
+//
+//
+//    }
+}
 
 
 extension Entity: Hashable {
