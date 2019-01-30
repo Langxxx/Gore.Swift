@@ -15,6 +15,7 @@ struct Entity {
 
     let relationships: [Relationship]?
     let uniquenessConstraint: String?
+    let userInfo: [UserInfo]?
 }
 
 extension Entity: XMLIndexerDeserializable {
@@ -24,7 +25,8 @@ extension Entity: XMLIndexerDeserializable {
             attributes: node["attribute"].value(),
             parrentName: node.value(ofAttribute: "parentEntity"),
             relationships: node["relationship"].value(),
-            uniquenessConstraint: node["uniquenessConstraints"]["uniquenessConstraint"]["constraint"].value(ofAttribute: "value")
+            uniquenessConstraint: node["uniquenessConstraints"]["uniquenessConstraint"]["constraint"].value(ofAttribute: "value"),
+            userInfo: node["userInfo"]["entry"].value()
         )
     }
 }
@@ -188,7 +190,7 @@ extension Entity {
         }
         return uniquenessConstraint
     }
-    //TODO: 
+    //TODO:
 //    private func _createFunction() -> Function {
 //        let jsonValid = Guard(
 //            conditions: ["let json = json"],

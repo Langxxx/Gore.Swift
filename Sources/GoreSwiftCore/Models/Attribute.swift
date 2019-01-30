@@ -15,11 +15,14 @@ struct Attribute {
     let type: String
     let accessModifier = "public" //TODO
 
-    init(name: String, defaultValue: String?, optioanStr: String?, typeStr: String) {
+    let userInfo: [UserInfo]?
+
+    init(name: String, defaultValue: String?, optioanStr: String?, typeStr: String, userInfo: [UserInfo]?) {
         self.name = name
         self.optional = optioanStr == "YES"
         self.type = Attribute.typeTransform(with: typeStr)
         self.defaultValue = defaultValue.flatMap { typeStr == "String" ? "\"\($0)\"" : $0 }
+        self.userInfo = userInfo
     }
 }
 
@@ -46,7 +49,8 @@ extension Attribute: XMLIndexerDeserializable {
             name: node.value(ofAttribute: "name"),
             defaultValue: node.value(ofAttribute: "defaultValueString"),
             optioanStr: node.value(ofAttribute: "optional"),
-            typeStr: node.value(ofAttribute: "attributeType")
+            typeStr: node.value(ofAttribute: "attributeType"),
+            userInfo: node["userInfo"]["entry"].value()
         )
     }
 }

@@ -16,12 +16,15 @@ struct Relationship {
     let ordered: Bool
     let accessModifier = "public" //TODO
 
-    init(name: String, optional: String?, toMany: String?, destinationEntityName: String, ordered: String?) {
+    let userInfo: [UserInfo]?
+
+    init(name: String, optional: String?, toMany: String?, destinationEntityName: String, ordered: String?, userInfo: [UserInfo]?) {
         self.name = name
         self.optional = optional == "YES"
         self.toMany = toMany == "YES"
         self.destinationEntityName = destinationEntityName
         self.ordered = ordered == "YES"
+        self.userInfo = userInfo
     }
 }
 
@@ -32,7 +35,8 @@ extension Relationship: XMLIndexerDeserializable {
             optional: node.value(ofAttribute: "optional"),
             toMany: node.value(ofAttribute: "toMany"),
             destinationEntityName: node.value(ofAttribute: "destinationEntity"),
-            ordered: node.value(ofAttribute: "ordered")
+            ordered: node.value(ofAttribute: "ordered"),
+            userInfo: node["userInfo"]["entry"].value()
         )
     }
 }
