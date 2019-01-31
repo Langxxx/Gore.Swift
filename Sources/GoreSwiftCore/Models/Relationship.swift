@@ -79,37 +79,28 @@ fileprivate extension Relationship {
 extension Relationship {
     var convenienceFucntion: [Function]? {
         if !toMany { return nil }
+        let parameter = Parameter( name: "obj", type: destinationEntityName)
+
         let addRelationship = Function(
             comments: [],
-            signature: _addFcuntionSignature,
-            statements: _addFunctionBody)
+            name: "add\(name.capitalized)Object",
+            parameters: [parameter],
+            statements: [
+                "let mutable = \(name).mutableCopy() as! \(setDescription)",
+                "mutable.add(obj)",
+                "\(name) = mutable.copy() as! \(setDescription)",
+            ])
+
         let removeRelationship = Function(
             comments: [],
-            signature: _removeFcuntionSignature,
-            statements: _removeFunctionBody)
+            name: "remove\(name.capitalized)Objec",
+            parameters: [parameter],
+            statements: [
+                "let mutable = \(name).mutableCopy() as! \(setDescription)",
+                "mutable.remove(obj)",
+                "\(name) = mutable.copy() as! \(setDescription)"
+            ])
         return [addRelationship, removeRelationship]
-    }
-
-    private var _addFcuntionSignature: String {
-        return "func add\(name.capitalized)Object(_ obj: \(destinationEntityName))"
-    }
-    private var _addFunctionBody: [String] {
-        return [
-            "let mutable = \(name).mutableCopy() as! \(setDescription)",
-            "mutable.add(obj)",
-            "\(name) = mutable.copy() as! \(setDescription)",
-        ]
-    }
-
-    private var _removeFcuntionSignature: String {
-        return "func remove\(name.capitalized)Object(_ obj: \(destinationEntityName))"
-    }
-    private var _removeFunctionBody: [String] {
-        return [
-            "let mutable = \(name).mutableCopy() as! \(setDescription)",
-            "mutable.remove(obj)",
-            "\(name) = mutable.copy() as! \(setDescription)"
-        ]
     }
 }
 

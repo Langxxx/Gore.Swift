@@ -14,7 +14,7 @@ struct Entity {
     let parrentName: String?
 
     let relationships: [Relationship]?
-    let uniquenessConstraint: String?
+    let uniquenessConstraints: [UniquenessConstraint]?
     let userInfo: [UserInfo]?
 }
 
@@ -25,7 +25,7 @@ extension Entity: XMLIndexerDeserializable {
             attributes: node["attribute"].value(),
             parrentName: node.value(ofAttribute: "parentEntity"),
             relationships: node["relationship"].value(),
-            uniquenessConstraint: node["uniquenessConstraints"]["uniquenessConstraint"]["constraint"].value(ofAttribute: "value"),
+            uniquenessConstraints: node["uniquenessConstraints"].value(),
             userInfo: node["userInfo"]["entry"].value()
         )
     }
@@ -95,43 +95,73 @@ extension Entity {
         return Model.entities.first { $0.name == parrentName }
     }
     var fetchFunction: [Function]? {
-        guard let uniquenessConstraint = uniquenessConstraint,
-            parrent?.uniquenessConstraint == nil else {
+        guard let uniquenessConstraints = uniquenessConstraints,
+            parrent?.uniquenessConstraints == nil else {
                 return nil
         }
-        return fetchOrCreateFunctions(uniquenessConstraint: uniquenessConstraint) +
-            fetchFunctions(uniquenessConstraint: uniquenessConstraint) +
-            [_fetchOrCreateFunction(uniquenessConstraint: uniquenessConstraint)]
+        return uniquenessConstraints.flatMap { uniquenessConstraint in
+            return fetchOrCreateFunctions(uniquenessConstraint: uniquenessConstraint) +
+                fetchFunctions(uniquenessConstraint: uniquenessConstraint) +
+                [_fetchOrCreateFunction(uniquenessConstraint: uniquenessConstraint)]
+        }
     }
 
-    private func fetchOrCreateFunctions(uniquenessConstraint: String) -> [Function] {
+    private func fetchOrCreateFunctions(uniquenessConstraint: UniquenessConstraint) -> [Function] {
+        guard case let .single(uniquenessConstraint) = uniquenessConstraint else {
+            //TODO
+            return []
+        }
+        let uniquenessConstraintParameter = Parameter(name: uniquenessConstraint, type: "String")
+
         let one = Function(
-            comments: [],
-            signature: "public class func fetchOrCreate(\(uniquenessConstraint): String, in context: NSManagedObjectContext) -> Self",
+            accessModifier: .public,
+            isClass: true,
+            name: "fetchOrCreate",
+            parameters: [contextParameter, uniquenessConstraintParameter],
+            returnType: "Self",
             statements: [
                 "var create: Bool = false",
                 "return _fetchOrCreate(id: id, create: &create, in: context)"
             ])
         let two = Function(
-            comments: [],
-            signature: "public class func fetchOrCreate(\(uniquenessConstraint): String, create: inout Bool, in context: NSManagedObjectContext) -> Self",
+            accessModifier: .public,
+            isClass: true,
+            name: "fetchOrCreate",
+            parameters: [
+                contextParameter,
+                Parameter(name: "create", type: "Bool", isInout: true),
+                uniquenessConstraintParameter,
+            ],
+            returnType: "Self",
             statements: ["return _fetchOrCreate(id: id, create: &create, in: context)"])
         return [one, two]
     }
 
-    private func fetchFunctions(uniquenessConstraint: String) -> [Function] {
+    private func fetchFunctions(uniquenessConstraint: UniquenessConstraint) -> [Function] {
+        guard case let .single(uniquenessConstraint) = uniquenessConstraint else {
+            //TODO
+            return []
+        }
+        let uniquenessConstraintParameter = Parameter(name: uniquenessConstraint, type: "String")
+
         let one = Function(
-            comments: [],
-            signature: "public class func fetch(\(uniquenessConstraint): String, in context: NSManagedObjectContext) -> Self?",
+            accessModifier: .public,
+            isClass: true,
+            name: "fetch",
+            parameters: [contextParameter, uniquenessConstraintParameter],
+            returnType: "Self?",
             statements: ["return _fetch(\(uniquenessConstraint): \(uniquenessConstraint), in: context)"])
         let two = Function(
-            comments: [],
-            signature: "private class func _fetch<T: \(name)>(\(uniquenessConstraint): String, in context: NSManagedObjectContext) -> T?",
+            accessModifier: .private,
+            isClass: true,
+            name: "_fetch<T: \(name)>",
+            parameters: [contextParameter, uniquenessConstraintParameter],
+            returnType: "T?",
             statements: ["return T.findOrFetch(in: context, predicate: Query.equal(\"\(uniquenessConstraint)\", \(uniquenessConstraint))"])
         return [one, two]
     }
 
-    private func _fetchOrCreateFunction(uniquenessConstraint: String) -> Function {
+    private func _fetchOrCreateFunction(uniquenessConstraint: UniquenessConstraint) -> Function {
         let guardBlock = Guard(
             conditions: ["let result = T.findOrFetch(in: context, predicate: Query.equal(\"\(uniquenessConstraint)\", \(uniquenessConstraint))"],
             statements: [
@@ -140,14 +170,26 @@ extension Entity {
                 "create = true",
                 "return o"
             ])
+        let uniquenessConstraintParameter = Parameter(name: "TODO", type: "String")
         return Function(
-            comments: [],
-            signature: "private class func _fetchOrCreate<T: \(name)>(\(uniquenessConstraint): String, create: inout Bool, in context: NSManagedObjectContext) -> T",
+            accessModifier: .private,
+            isClass: true,
+            name: "_fetchOrCreate<T: \(name)>",
+            parameters: [
+                contextParameter,
+                Parameter(name: "create", type: "Bool", isInout: true),
+                uniquenessConstraintParameter,
+            ],
+            returnType: "t",
             statements: [
                 guardBlock,
                 "create = false",
                 "return result"
             ])
+    }
+
+    private var contextParameter: Parameter {
+        return Parameter(localName: "in", name: "context", type: "NSManagedObjectContext")
     }
 }
 
@@ -179,13 +221,22 @@ extension Entity {
         let returnCreated = Statement.return("create(from: json, in: context) {\n\("configration?($0, true)".indent())\n}")
         statements.append(returnCreated)
         return Function(
-            comments: [],
-            signature: "@discardableResult\npublic \(parrent == nil ? "" : "override ")class func updateOrCreate(from json: JSONResponse?, in context: NSManagedObjectContext, configration: ((\(name), Bool) -> ())? = nil) -> \(name)?",
+            discardableResult: true,
+            accessModifier: .public,
+            override: parrent?.uniquenessConstraintWithParrent() != nil,
+            isClass: true,
+            name: "updateOrCreate",
+            parameters: [
+                Parameter(localName: "from", name: "json", type: "JSONResponse?"),
+                contextParameter,
+                Parameter(name: "configration", type: "((\(name), Bool) -> ())?", defaultValue: "nil"),
+            ],
+            returnType: "\(name)?",
             statements: statements)
     }
 
-    func uniquenessConstraintWithParrent() -> String? {
-        guard let uniquenessConstraint = self.uniquenessConstraint else {
+    func uniquenessConstraintWithParrent() -> [UniquenessConstraint]? {
+        guard let uniquenessConstraint = self.uniquenessConstraints else {
             return parrent?.uniquenessConstraintWithParrent()
         }
         return uniquenessConstraint
