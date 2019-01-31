@@ -8,6 +8,7 @@
 import Foundation
 import SWXMLHash
 
+@dynamicMemberLookup
 struct Entity {
     let name: String
     let attributes: [Attribute]
@@ -16,6 +17,10 @@ struct Entity {
     let relationships: [Relationship]?
     let uniquenessConstraints: [UniquenessConstraint]?
     let userInfo: [UserInfo]?
+
+    subscript(dynamicMember attribute: String) -> Attribute? {
+        return attributes.first { $0.name == attribute }
+    }
 }
 
 extension Entity: XMLIndexerDeserializable {
@@ -107,66 +112,54 @@ extension Entity {
     }
 
     private func fetchOrCreateFunctions(uniquenessConstraint: UniquenessConstraint) -> [Function] {
-        guard case let .single(uniquenessConstraint) = uniquenessConstraint else {
-            //TODO
-            return []
-        }
-        let uniquenessConstraintParameter = Parameter(name: uniquenessConstraint, type: "String")
-
         let one = Function(
             accessModifier: .public,
             isClass: true,
             name: "fetchOrCreate",
-            parameters: [contextParameter, uniquenessConstraintParameter],
+            parameters: uniquenessConstraint.asFormalParameter(with: self) + [contextParameter],
             returnType: "Self",
             statements: [
                 "var create: Bool = false",
-                "return _fetchOrCreate(id: id, create: &create, in: context)"
+                "return _fetchOrCreate(\(uniquenessConstraint.asActualParameter()), create: &create, in: context)"
             ])
         let two = Function(
             accessModifier: .public,
             isClass: true,
             name: "fetchOrCreate",
-            parameters: [
-                contextParameter,
+            parameters: uniquenessConstraint.asFormalParameter(with: self) +  [
                 Parameter(name: "create", type: "Bool", isInout: true),
-                uniquenessConstraintParameter,
+                contextParameter
             ],
             returnType: "Self",
-            statements: ["return _fetchOrCreate(id: id, create: &create, in: context)"])
+            statements: ["return _fetchOrCreate(\(uniquenessConstraint.asActualParameter()), create: &create, in: context)"])
         return [one, two]
     }
 
     private func fetchFunctions(uniquenessConstraint: UniquenessConstraint) -> [Function] {
-        guard case let .single(uniquenessConstraint) = uniquenessConstraint else {
-            //TODO
-            return []
-        }
-        let uniquenessConstraintParameter = Parameter(name: uniquenessConstraint, type: "String")
 
         let one = Function(
             accessModifier: .public,
             isClass: true,
             name: "fetch",
-            parameters: [contextParameter, uniquenessConstraintParameter],
+            parameters: uniquenessConstraint.asFormalParameter(with: self) + [contextParameter],
             returnType: "Self?",
-            statements: ["return _fetch(\(uniquenessConstraint): \(uniquenessConstraint), in: context)"])
+            statements: ["return _fetch(\(uniquenessConstraint.asActualParameter()), in: context)"])
         let two = Function(
             accessModifier: .private,
             isClass: true,
             name: "_fetch<T: \(name)>",
-            parameters: [contextParameter, uniquenessConstraintParameter],
+            parameters: uniquenessConstraint.asFormalParameter(with: self) + [contextParameter],
             returnType: "T?",
-            statements: ["return T.findOrFetch(in: context, predicate: Query.equal(\"\(uniquenessConstraint)\", \(uniquenessConstraint))"])
+            statements: ["return T.findOrFetch(in: context, predicate: \(uniquenessConstraint.predicateString))"])
         return [one, two]
     }
 
     private func _fetchOrCreateFunction(uniquenessConstraint: UniquenessConstraint) -> Function {
         let guardBlock = Guard(
-            conditions: ["let result = T.findOrFetch(in: context, predicate: Query.equal(\"\(uniquenessConstraint)\", \(uniquenessConstraint))"],
+            conditions: ["let result = T.findOrFetch(in: context, predicate: \(uniquenessConstraint.predicateString))"],
             statements: [
                 "let o = T.insertObject(in: context)",
-                "o.\(uniquenessConstraint) = \(uniquenessConstraint)",
+                uniquenessConstraint.constraints.map { "o.\($0) = \($0)" }.joined(separator: "\n"),
                 "create = true",
                 "return o"
             ])
@@ -176,9 +169,9 @@ extension Entity {
             isClass: true,
             name: "_fetchOrCreate<T: \(name)>",
             parameters: [
-                contextParameter,
                 Parameter(name: "create", type: "Bool", isInout: true),
                 uniquenessConstraintParameter,
+                contextParameter
             ],
             returnType: "t",
             statements: [

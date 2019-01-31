@@ -32,8 +32,34 @@ extension UniquenessConstraint: XMLIndexerDeserializable {
 
 }
 
-//extension Array: XMLElementDeserializable where Element == UniquenessConstraint {
-//    private static func deserialize(_ element: SWXMLHash.XMLElement) throws -> UniquenessConstraint {
-//         throw XMLDeserializationError.nodeHasNoValue
-//    }
-//}
+extension UniquenessConstraint {
+    var constraints: [String] {
+        switch self {
+        case .single(let attribute):
+            return [attribute]
+        case .composite(let attributes):
+            return attributes
+        }
+    }
+
+    func asFormalParameter(with entity: Entity) -> [Parameter] {
+        return constraints
+            .compactMap { return entity[dynamicMember: $0] }
+            .map { return Parameter(name: $0.name, type: $0.type) }
+    }
+
+    func asActualParameter() -> String {
+        return constraints.map { "\($0): \($0)" }
+            .joined(separator: ", ")
+    }
+
+    var predicateString: String {
+        guard constraints.count > 1 else {
+            return "Query.equal(\"\(constraints[0])\", \(constraints[0]))"
+        }
+
+        let predicate = constraints.map { "Query.equal(\"\($0)\", \($0))" }
+            .joined(separator: ", ")
+        return "NSCompoundPredicate(andPredicateWithSubpredicates: [\(predicate)].map { $0.predicate })"
+    }
+}

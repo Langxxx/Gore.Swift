@@ -11,7 +11,7 @@ import SWXMLHash
 struct Attribute {
     let name: String
     let defaultValue: String?
-    let optional: Bool
+//    let optional: Bool
     let type: String
     let accessModifier = "public" //TODO
 
@@ -19,8 +19,8 @@ struct Attribute {
 
     init(name: String, defaultValue: String?, optioanStr: String?, typeStr: String, userInfo: [UserInfo]?) {
         self.name = name
-        self.optional = optioanStr == "YES"
-        self.type = Attribute.typeTransform(with: typeStr)
+        let type = Attribute.typeTransform(with: typeStr)
+        self.type = optioanStr == "YES" ? "\(type)?" : type
         self.defaultValue = defaultValue.flatMap { typeStr == "String" ? "\"\($0)\"" : $0 }
         self.userInfo = userInfo
     }
@@ -63,7 +63,7 @@ extension Attribute {
             static: false,
             variable: true,
             name: name,
-            type: optional ? "\(type)?" : type,
+            type: type,
             extraModifier: ["@NSManaged"])
     }
 
