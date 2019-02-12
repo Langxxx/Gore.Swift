@@ -8,10 +8,10 @@
 import Foundation
 import SWXMLHash
 
-struct Attribute {
+struct Attribute: UserInfoProtocol {
     let name: String
     let defaultValue: String?
-//    let optional: Bool
+    let optional: Bool
     let type: String
     let accessModifier = "public" //TODO
 
@@ -19,8 +19,10 @@ struct Attribute {
 
     init(name: String, defaultValue: String?, optioanStr: String?, typeStr: String, userInfo: [UserInfo]?) {
         self.name = name
+        let optional = optioanStr == "YES"
         let type = Attribute.typeTransform(with: typeStr)
-        self.type = optioanStr == "YES" ? "\(type)?" : type
+        self.optional = optional
+        self.type = optional ? "\(type)?" : type
         self.defaultValue = defaultValue.flatMap { typeStr == "String" ? "\"\($0)\"" : $0 }
         self.userInfo = userInfo
     }
@@ -75,5 +77,18 @@ extension Attribute {
             variable: false,
             name: name,
             value: "\"\(name)\"")
+    }
+}
+
+extension Attribute {
+    var jsonStatement: Statement {
+        let typeString = optional ? String(type.prefix(type.count - 1)) : type
+        let defaultValueString = defaultValue.map { " ?? \($0)" } ?? ""
+        let jsonKey = self.jsonKey ?? name
+        let jsonTransformer = self.jsonTransformer.map {
+            return "\($0)(\(Statement.parseJSON(with: jsonKey).swiftCode))"
+            } ?? "\(Statement.parseJSON(with: jsonKey).swiftCode) as? \(typeString)\(defaultValueString)"
+
+        return Statement("let \(name) = \(jsonTransformer)")
     }
 }

@@ -188,44 +188,51 @@ extension Entity {
 
 extension Entity {
     var updateOrCreateFunction: [Function] {
-        return [_updateOrCreateFunction()]
+        return _updateOrCreateFunction() + [_createFunction()]
     }
 
-    private func _updateOrCreateFunction() -> Function {
-        var statements: [SwiftCodeConverible] = []
-        let jsonValid = Guard(
-            conditions: ["let json = json"],
-            statements: [Statement.return("nil")])
-        statements.append(jsonValid)
-        statements.append(Statement.empty())
+    private func _updateOrCreateFunction() -> [Function] {
+        func ___updateOrCreateFunction(with constraint: UniquenessConstraint?) -> Function {
+            var statements: [SwiftCodeConverible] = []
+            let jsonValid = Guard(
+                conditions: ["let json = json"],
+                statements: [Statement.return("nil")])
+            statements.append(jsonValid)
+            statements.append(Statement.empty())
 
-        if let id = uniquenessConstraintWithParrent() {
-            let ifID = If(
-                conditions: [
-                    "let id = json[\"\(id)\"] as? String",
-                    "let obj = \(name).fetch(id: \(id), in: context)"
-                ], statements: [
-                    "obj.update(from: json)",
-                    "configration?(obj, false)",
-                    Statement.return("obj")
-                ])
-            statements.append(Statement(ifID, comments: ["use identifier attribute to fetch first, if already exsit, just update it"]))
+            if let constraint = constraint {
+                let attributes = constraint.constraints
+                    .compactMap { return self[dynamicMember: $0] }
+                    .map { $0.jsonStatement }
+
+                let ifID = If(
+                    conditions: attributes + [
+                        "let obj = \(name).fetch(\(constraint.asActualParameter()), in: context)"
+                    ], statements: [
+                        "obj.update(from: json)",
+                        "configration?(obj, false)",
+                        Statement.return("obj")
+                    ])
+                statements.append(Statement(ifID, comments: ["use identifier attribute to fetch first, if already exsit, just update it"]))
+            }
+            let returnCreated = Statement.return("create(from: json, in: context) {\n\("configration?($0, true)".indent())\n}")
+            statements.append(returnCreated)
+            return Function(
+                discardableResult: true,
+                accessModifier: .public,
+                override: parrent?.uniquenessConstraintWithParrent() != nil,
+                isClass: true,
+                name: "updateOrCreate",
+                parameters: [
+                    Parameter(localName: "from", name: "json", type: "JSONResponse?"),
+                    contextParameter,
+                    Parameter(name: "configration", type: "((\(name), Bool) -> ())?", defaultValue: "nil")
+                ],
+                returnType: "\(name)?",
+                statements: statements)
         }
-        let returnCreated = Statement.return("create(from: json, in: context) {\n\("configration?($0, true)".indent())\n}")
-        statements.append(returnCreated)
-        return Function(
-            discardableResult: true,
-            accessModifier: .public,
-            override: parrent?.uniquenessConstraintWithParrent() != nil,
-            isClass: true,
-            name: "updateOrCreate",
-            parameters: [
-                Parameter(localName: "from", name: "json", type: "JSONResponse?"),
-                contextParameter,
-                Parameter(name: "configration", type: "((\(name), Bool) -> ())?", defaultValue: "nil"),
-            ],
-            returnType: "\(name)?",
-            statements: statements)
+
+        return uniquenessConstraints?.map(___updateOrCreateFunction(with:)) ?? [___updateOrCreateFunction(with: nil)]
     }
 
     func uniquenessConstraintWithParrent() -> [UniquenessConstraint]? {
@@ -234,14 +241,77 @@ extension Entity {
         }
         return uniquenessConstraint
     }
-    //TODO:
-//    private func _createFunction() -> Function {
-//        let jsonValid = Guard(
-//            conditions: ["let json = json"],
-//            statements: [Statement.return("nil")])
-//
-//
-//    }
+
+    private func _createFunction() -> Function {
+        let jsonValid = Guard(
+            conditions: ["let json = json"],
+            statements: [Statement.return("nil")])
+
+        var statements: [SwiftCodeConverible] = [jsonValid]
+
+        statements.append(Statement.empty())
+        statements.append(Statement.divider())
+        statements.append(Statement("// check attributes if need"))
+        let attributesString = attributes.map { attribute -> SwiftCodeConverible in
+            let jsonStatement = attribute.jsonStatement
+            guard !attribute.optional else {
+                return jsonStatement
+            }
+
+            guard attribute.defaultValue == nil else {
+                return jsonStatement
+            }
+
+            return If(
+                conditions: [jsonStatement],
+                statements: [
+                    "log.warning(\"missing '\(attribute.name)'\")",
+                    Statement.return("nil")
+                ])
+        }
+        statements.append(contentsOf: attributesString)
+        statements.append(Statement.divider())
+        statements.append(Statement.empty())
+
+        statements.append(Statement.divider())
+        statements.append(Statement("// check relationships if need"))
+        let relationshipString = relationships?.compactMap { $0.jsonStatement } ?? []
+        statements.append(contentsOf: relationshipString)
+        statements.append(Statement.divider())
+        statements.append(Statement.empty())
+
+        statements.append(Statement.divider())
+        statements.append(Statement("let obj = \(name).insertObject(in: context)", comments: ["insert to context (already try fetched above if needed)"]))
+        statements.append(Statement.empty())
+
+        let assignAttributes = Statement(attributes.map { "obj.\($0.name) = \($0.name)" }.joined(separator: "\n"),
+                                         comments: ["assign attributes"])
+        statements.append(assignAttributes)
+        if let relationships = relationships {
+            let assignRelationship = Statement(relationships.filter { $0.jsonKey != nil }.map { "obj.\($0.name) = \($0.name)" }.joined(separator: "\n"),
+                                               comments: ["assign relationship"])
+            statements.append(assignRelationship)
+        }
+
+        statements.append(Statement.empty())
+        statements.append(Statement("configration?(obj)"))
+        statements.append(Statement.empty())
+        statements.append(Statement.return("obj"))
+        
+        return Function(
+            discardableResult: true,
+            accessModifier: .public,
+            override: parrent != nil,
+            isClass: true,
+            name: "create",
+            parameters: [
+                Parameter(localName: "from", name: "json", type: "JSONResponse?"),
+                contextParameter,
+                Parameter(name: "configration", type: "((\(name), Bool) -> ())?", defaultValue: "nil")
+            ],
+            returnType: name,
+            statements: statements)
+    }
 }
 
 

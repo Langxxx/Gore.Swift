@@ -28,4 +28,14 @@ extension Statement {
     static func empty() -> Statement {
         return  Statement("", comments: [])
     }
+    static func parseJSON(with jsonKey: String) -> Statement {
+        guard jsonKey.contains(".") else {
+            return Statement("json[\"\(jsonKey)\"]")
+        }
+
+        return Statement("(json as AnyObject).value(forKeyPath: \"\(jsonKey)\")")
+    }
+    static func divider(comments: [String] = []) -> Statement {
+        return Statement("///////////////////////////////////////////////////////////////////////////////", comments: comments)
+    }
 }

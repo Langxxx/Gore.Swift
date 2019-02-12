@@ -8,7 +8,7 @@
 import Foundation
 import SWXMLHash
 
-struct Relationship {
+struct Relationship: UserInfoProtocol {
     let name: String
     let optional: Bool
     let toMany: Bool
@@ -104,4 +104,27 @@ extension Relationship {
     }
 }
 
+extension Relationship {
+    var jsonStatement: Statement? {
+        guard let jsonKey: String = self.jsonKey else {
+            return nil
+        }
+        let parseJSON = Statement.parseJSON(with: jsonKey)
 
+        guard toMany else {
+            return Statement("let \(name) = \(destinationEntityName).updateOrCreate(from: \(parseJSON.swiftCode) as? JSONResponse, in: context)")
+        }
+
+        let setType = ordered ? "NSOrderedSet" : "NSSet"
+        let declaration = Statement("let \(name): \(setType)")
+        let ifString = If(
+            conditions: ["let \(name)JSON = \(parseJSON.swiftCode) as? [JSONResponse]"],
+            statements: [
+                "let array = \(name)JSON.compactMap { \(destinationEntityName).updateOrCreate(from: $0, in: context) }",
+                "\(name) = \(setType)(array: array)"
+            ])
+        .else(statements: ["\(name) = \(setType)()"])
+
+        return Statement(declaration.swiftCode + "\n" + ifString.swiftCode)
+    }
+}
